@@ -1,5 +1,8 @@
 from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+load_dotenv()
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from src.routers import health, documents, query

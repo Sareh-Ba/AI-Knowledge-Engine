@@ -197,6 +197,13 @@
 </main>
 
 <script>
+  async function safeJson(res) {
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) return res.json();
+    const text = await res.text();
+    return { detail: text || `HTTP ${res.status}` };
+  }
+
   const dropZone   = document.getElementById('drop-zone');
   const fileInput  = document.getElementById('file-input');
   const uploadBtn  = document.getElementById('upload-btn');
@@ -241,7 +248,7 @@
 
     try {
       const res = await fetch('/documents/upload', { method: 'POST', body: form });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (!res.ok) throw new Error(data.detail || 'Upload failed');
       uploadStatus.className = 'status-ok';
       uploadStatus.textContent = `✓ Stored ${data.chunks_stored} chunks from "${data.filename}"`;
@@ -267,7 +274,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, n_results: 5 }),
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (!res.ok) throw new Error(data.detail || 'Query failed');
 
       answerText.textContent = data.answer;

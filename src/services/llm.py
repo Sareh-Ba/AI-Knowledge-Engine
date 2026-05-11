@@ -1,4 +1,5 @@
-import anthropic
+import os
+from google import genai
 
 _client = None
 
@@ -9,10 +10,10 @@ _SYSTEM_PROMPT = (
 )
 
 
-def get_client() -> anthropic.Anthropic:
+def get_client() -> genai.Client:
     global _client
     if _client is None:
-        _client = anthropic.Anthropic()
+        _client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
     return _client
 
 
@@ -21,20 +22,8 @@ def ask(question: str, chunks: list[dict]) -> str:
         f"[Source: {c['source']}, chunk {c['chunk_index']}]\n{c['text']}"
         for c in chunks
     )
-
-    with get_client().messages.stream(
-        model="claude-opus-4-7",
-        max_tokens=8192,
-        system=[{
-            "type": "text",
-            "text": _SYSTEM_PROMPT,
-            "cache_control": {"type": "ephemeral"},
-        }],
-        messages=[{
-            "role": "user",
-            "content": f"Context:\n{context}\n\nQuestion: {question}",
-        }],
-    ) as stream:
-        message = stream.get_final_message()
-
-    return next(block.text for block in message.content if block.type == "text")
+    response = get_client().models.generate_content(
+        model="gemini-1.5-flash",
+        contents=f"{_SYSTEM_PROMPT}\n\nContext:\n{context}\n\nQuestion: {question}",
+    )
+    return response.text

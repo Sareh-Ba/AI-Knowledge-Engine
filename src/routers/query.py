@@ -29,5 +29,8 @@ def query_knowledge(body: QueryRequest):
     chunks = search_chunks(body.question, n_results=body.n_results)
     if not chunks:
         raise HTTPException(status_code=404, detail="No knowledge found. Upload a PDF first.")
-    answer = ask(body.question, chunks)
+    try:
+        answer = ask(body.question, chunks)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI service error: {e}")
     return QueryResponse(question=body.question, answer=answer, sources=chunks)
