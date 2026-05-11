@@ -1,5 +1,10 @@
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from src.routers import health, documents, query
+
+_STATIC = Path(__file__).parent.parent / "static"
 
 app = FastAPI(
     title="AI Knowledge Engine",
@@ -11,7 +16,9 @@ app.include_router(health.router)
 app.include_router(documents.router)
 app.include_router(query.router)
 
+app.mount("/static", StaticFiles(directory=_STATIC), name="static")
+
 
 @app.get("/")
 def root():
-    return {"message": "AI Knowledge Engine API", "version": "0.1.0"}
+    return FileResponse(_STATIC / "index.html")

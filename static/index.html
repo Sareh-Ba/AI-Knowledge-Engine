@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Knowledge Engine</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header span { font-size: 1.5rem; }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* Upload */
+    .drop-zone {
+      border: 2px dashed #d0d0d0;
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #555;
+      background: #fafafa;
+    }
+    .drop-zone input { display: none; }
+    .drop-zone p { color: #888; font-size: .9rem; }
+    .drop-zone .icon { font-size: 2rem; margin-bottom: .5rem; }
+
+    .upload-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: .75rem;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .upload-btn:hover:not(:disabled) { background: #333; }
+    .upload-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    #upload-status {
+      margin-top: .75rem;
+      font-size: .85rem;
+      min-height: 1.2em;
+    }
+    .status-ok  { color: #2a7a2a; }
+    .status-err { color: #b00; }
+
+    /* Query */
+    .query-row {
+      display: flex;
+      gap: .75rem;
+    }
+    .query-row input {
+      flex: 1;
+      padding: .75rem 1rem;
+      border: 1px solid #d0d0d0;
+      border-radius: 8px;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .query-row input:focus { border-color: #555; }
+    .query-row button {
+      padding: .75rem 1.25rem;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: .95rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .2s;
+    }
+    .query-row button:hover:not(:disabled) { background: #333; }
+    .query-row button:disabled { opacity: .5; cursor: not-allowed; }
+
+    #answer-box {
+      margin-top: 1rem;
+      display: none;
+    }
+    #answer-text {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: .95rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .sources-label {
+      margin-top: 1rem;
+      font-size: .8rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .source-chip {
+      display: inline-block;
+      margin: .25rem .25rem 0 0;
+      padding: .25rem .6rem;
+      background: #efefef;
+      border-radius: 20px;
+      font-size: .78rem;
+      color: #555;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: .4rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>🧠</span>
+  <h1>AI Knowledge Engine</h1>
+</header>
+
+<main>
+  <!-- Upload -->
+  <div class="card">
+    <h2>Upload Document</h2>
+    <div class="drop-zone" id="drop-zone">
+      <div class="icon">📄</div>
+      <p>Drop a PDF here or <strong>click to browse</strong></p>
+      <input type="file" id="file-input" accept=".pdf" />
+    </div>
+    <button class="upload-btn" id="upload-btn" disabled>Upload</button>
+    <div id="upload-status"></div>
+  </div>
+
+  <!-- Query -->
+  <div class="card">
+    <h2>Ask a Question</h2>
+    <div class="query-row">
+      <input type="text" id="question-input" placeholder="What does the document say about…?" />
+      <button id="ask-btn">Ask</button>
+    </div>
+    <div id="answer-box">
+      <div id="answer-text"></div>
+      <div class="sources-label">Sources</div>
+      <div id="sources"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const dropZone   = document.getElementById('drop-zone');
+  const fileInput  = document.getElementById('file-input');
+  const uploadBtn  = document.getElementById('upload-btn');
+  const uploadStatus = document.getElementById('upload-status');
+  const questionInput = document.getElementById('question-input');
+  const askBtn     = document.getElementById('ask-btn');
+  const answerBox  = document.getElementById('answer-box');
+  const answerText = document.getElementById('answer-text');
+  const sourcesDiv = document.getElementById('sources');
+
+  let selectedFile = null;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') setFile(f);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  function setFile(f) {
+    selectedFile = f;
+    dropZone.querySelector('p').innerHTML = `<strong>${f.name}</strong> (${(f.size/1024).toFixed(1)} KB)`;
+    uploadBtn.disabled = false;
+    uploadStatus.textContent = '';
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span class="spinner"></span>Uploading…';
+    uploadStatus.textContent = '';
+
+    const form = new FormData();
+    form.append('file', selectedFile);
+
+    try {
+      const res = await fetch('/documents/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Upload failed');
+      uploadStatus.className = 'status-ok';
+      uploadStatus.textContent = `✓ Stored ${data.chunks_stored} chunks from "${data.filename}"`;
+    } catch (err) {
+      uploadStatus.className = 'status-err';
+      uploadStatus.textContent = `✗ ${err.message}`;
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload';
+    }
+  });
+
+  async function ask() {
+    const q = questionInput.value.trim();
+    if (!q) return;
+    askBtn.disabled = true;
+    askBtn.innerHTML = '<span class="spinner"></span>Thinking…';
+    answerBox.style.display = 'none';
+
+    try {
+      const res = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, n_results: 5 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Query failed');
+
+      answerText.textContent = data.answer;
+      sourcesDiv.innerHTML = '';
+      const seen = new Set();
+      data.sources.forEach(s => {
+        if (!seen.has(s.source)) {
+          seen.add(s.source);
+          const chip = document.createElement('span');
+          chip.className = 'source-chip';
+          chip.textContent = s.source;
+          sourcesDiv.appendChild(chip);
+        }
+      });
+      answerBox.style.display = 'block';
+    } catch (err) {
+      answerText.textContent = `Error: ${err.message}`;
+      sourcesDiv.innerHTML = '';
+      answerBox.style.display = 'block';
+    } finally {
+      askBtn.disabled = false;
+      askBtn.textContent = 'Ask';
+    }
+  }
+
+  askBtn.addEventListener('click', ask);
+  questionInput.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+</script>
+</body>
+</html>
