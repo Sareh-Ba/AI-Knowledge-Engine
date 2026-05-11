@@ -8,7 +8,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=1, description="The question to search for")
-    n_results: int = Field(5, ge=1, le=20, description="Number of chunks to return")
+    n_results: int = Field(3, ge=1, le=20, description="Number of chunks to return")
 
 
 class ChunkResult(BaseModel):

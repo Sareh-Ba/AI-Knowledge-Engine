@@ -25,7 +25,7 @@ def store_chunks(chunks: list[str], source: str, collection_name: str = "knowled
     return len(chunks)
 
 
-def search_chunks(query: str, n_results: int = 5, collection_name: str = "knowledge") -> list[dict]:
+def search_chunks(query: str, n_results: int = 3, collection_name: str = "knowledge") -> list[dict]:
     collection = get_collection(collection_name)
     if collection.count() == 0:
         return []

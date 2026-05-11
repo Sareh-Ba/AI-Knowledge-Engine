@@ -17,11 +17,15 @@ def get_client() -> genai.Client:
     return _client
 
 
+_MAX_CONTEXT_CHARS = 1000
+
+
 def ask(question: str, chunks: list[dict]) -> str:
-    context = "\n\n".join(
+    raw_context = "\n\n".join(
         f"[Source: {c['source']}, chunk {c['chunk_index']}]\n{c['text']}"
         for c in chunks
     )
+    context = raw_context[:_MAX_CONTEXT_CHARS]
     response = get_client().models.generate_content(
         model="gemini-2.0-flash",
         contents=f"{_SYSTEM_PROMPT}\n\nContext:\n{context}\n\nQuestion: {question}",
