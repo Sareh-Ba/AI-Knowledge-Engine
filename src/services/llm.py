@@ -23,7 +23,7 @@ def ask(question: str, chunks: list[dict]) -> str:
         for c in chunks
     )
     response = get_client().models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.0-flash",
         contents=f"{_SYSTEM_PROMPT}\n\nContext:\n{context}\n\nQuestion: {question}",
     )
     return response.text
