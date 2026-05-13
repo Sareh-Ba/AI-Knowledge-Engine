@@ -109,7 +109,7 @@ pip install -r requirements.txt
 Eine `.env`-Datei im Projektverzeichnis anlegen:
 
 ```env
-GEMINI_API_KEY=dein_api_key_hier
+GOOGLE_API_KEY=dein_api_key_hier
 ```
 
 ---
